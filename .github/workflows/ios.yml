@@ -62,7 +62,7 @@ jobs:
           path: potterytracker-ios-screenshots.zip
           if-no-files-found: error
       - name: Build unsigned iOS app
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --release --no-codesign --build-number "${{ github.run_number }}"
       - name: Upload iOS app bundle
         uses: actions/upload-artifact@v4
         with:
