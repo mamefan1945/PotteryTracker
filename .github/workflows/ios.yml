@@ -30,6 +30,8 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Pottery Manager'" ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Pottery Manager'" ios/Runner/Info.plist
       - name: Install dependencies
         run: flutter pub get
+      - name: Generate platform launcher icons
+        run: dart run launcher_icons
       - name: Analyze
         run: flutter analyze
       - name: Run unit and widget tests
