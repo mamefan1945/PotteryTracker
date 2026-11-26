@@ -98,20 +98,42 @@ class _StudioHomePageState extends State<StudioHomePage> {
     if (mounted) _notify('Record saved.');
   }
 
-  Future<List<String>> _persistPhotos(List<XFile> photos) async {
+  Future<List<String>> _persistPhotos(List<String> photos) async {
     if (photos.isEmpty) return [];
     final root = await getApplicationDocumentsDirectory();
     final folder = Directory(p.join(root.path, 'record_photos'));
     await folder.create(recursive: true);
     final saved = <String>[];
     for (var i = 0; i < photos.length; i++) {
-      final source = photos[i];
-      final extension = p.extension(source.path).isEmpty ? '.jpg' : p.extension(source.path);
+      final sourcePath = photos[i];
+      if (p.equals(p.dirname(sourcePath), folder.path)) {
+        saved.add(sourcePath);
+        continue;
+      }
+      final extension = p.extension(sourcePath).isEmpty ? '.jpg' : p.extension(sourcePath);
       final destination = p.join(folder.path, '${DateTime.now().microsecondsSinceEpoch}_$i$extension');
-      await File(source.path).copy(destination);
+      await File(sourcePath).copy(destination);
       saved.add(destination);
     }
     return saved;
+  }
+
+  Future<void> _edit(StudioRecord record) async {
+    final draft = await showDialog<_Draft>(
+      context: context,
+      builder: (_) => _RecordDialog(category: record.category, record: record),
+    );
+    if (draft == null) return;
+    await StudioDatabase.instance.update(
+      id: record.id,
+      title: draft.title,
+      detail: draft.detail,
+      stage: draft.stage,
+      notes: draft.notes,
+      photos: await _persistPhotos(draft.photos),
+    );
+    await _load();
+    if (mounted) _notify('Changes saved.');
   }
 
   Future<void> _showListings(StudioRecord record) async {
@@ -269,12 +291,12 @@ class _StudioHomePageState extends State<StudioHomePage> {
                                   )),
                                 ],
                               ]),
-                              trailing: current.category == 'sale'
-                                  ? Row(mainAxisSize: MainAxisSize.min, children: [
-                                      IconButton(tooltip: 'Create listing', icon: const Icon(Icons.description_outlined), onPressed: () => _showListings(record)),
-                                      IconButton(tooltip: 'Delete record', icon: const Icon(Icons.delete_outline), onPressed: () => _delete(record)),
-                                    ])
-                                  : IconButton(tooltip: 'Delete record', icon: const Icon(Icons.delete_outline), onPressed: () => _delete(record)),
+                              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                                if (current.category == 'sale')
+                                  IconButton(tooltip: 'Create listing', icon: const Icon(Icons.description_outlined), onPressed: () => _showListings(record)),
+                                IconButton(tooltip: 'Edit record', icon: const Icon(Icons.edit_outlined), onPressed: () => _edit(record)),
+                                IconButton(tooltip: 'Delete record', icon: const Icon(Icons.delete_outline), onPressed: () => _delete(record)),
+                              ]),
                             ),
                           );
                         },
@@ -317,12 +339,13 @@ class _Draft {
   final String detail;
   final String stage;
   final String notes;
-  final List<XFile> photos;
+  final List<String> photos;
 }
 
 class _RecordDialog extends StatefulWidget {
-  const _RecordDialog({required this.category});
+  const _RecordDialog({required this.category, this.record});
   final String category;
+  final StudioRecord? record;
   @override
   State<_RecordDialog> createState() => _RecordDialogState();
 }
@@ -333,12 +356,25 @@ class _RecordDialogState extends State<_RecordDialog> {
   final _detail = TextEditingController();
   final _notes = TextEditingController();
   String? _stage;
-  final List<XFile> _photos = [];
+  final List<String> _photos = [];
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.record;
+    if (existing != null) {
+      _title.text = existing.title;
+      _detail.text = existing.detail;
+      _notes.text = existing.notes;
+      _stage = existing.stage.isEmpty ? null : existing.stage;
+      _photos.addAll(existing.photos);
+    }
+  }
 
   Future<void> _pickPhotos() async {
     final selected = await _picker.pickMultiImage(imageQuality: 85, maxWidth: 1800);
-    if (selected.isNotEmpty && mounted) setState(() => _photos.addAll(selected));
+    if (selected.isNotEmpty && mounted) setState(() => _photos.addAll(selected.map((photo) => photo.path)));
   }
 
   List<String> get _options => switch (widget.category) {
@@ -370,7 +406,7 @@ class _RecordDialogState extends State<_RecordDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: Text('Add ' + (widget.category == 'piece'
+        title: Text((widget.record == null ? 'Add ' : 'Edit ') + (widget.category == 'piece'
             ? 'piece'
             : widget.category == 'material'
                 ? 'material'
@@ -415,7 +451,7 @@ class _RecordDialogState extends State<_RecordDialog> {
                     itemCount: _photos.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 6),
                     itemBuilder: (context, index) => Stack(children: [
-                      ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(File(_photos[index].path), width: 72, height: 72, fit: BoxFit.cover)),
+                      ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(File(_photos[index]), width: 72, height: 72, fit: BoxFit.cover)),
                       Positioned(right: 0, top: 0, child: InkWell(onTap: () => setState(() => _photos.removeAt(index)), child: const CircleAvatar(radius: 11, child: Icon(Icons.close, size: 14)))),
                     ]),
                   )),
@@ -436,9 +472,9 @@ class _RecordDialogState extends State<_RecordDialog> {
           FilledButton(
             onPressed: () {
               if (!_form.currentState!.validate()) return;
-              Navigator.pop(context, _Draft(_title.text.trim(), _detail.text.trim(), _stage ?? '', _notes.text.trim(), List<XFile>.from(_photos)));
+              Navigator.pop(context, _Draft(_title.text.trim(), _detail.text.trim(), _stage ?? '', _notes.text.trim(), List<String>.from(_photos)));
             },
-            child: const Text('Save'),
+            child: Text(widget.record == null ? 'Save' : 'Save changes'),
           ),
         ],
       );
