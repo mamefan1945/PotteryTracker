@@ -3,7 +3,11 @@
 // ignore_for_file: deprecated_member_use, prefer_interpolation_to_compose_strings
 
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'data/studio_database.dart';
 
 void main() {
@@ -88,9 +92,26 @@ class _StudioHomePageState extends State<StudioHomePage> {
       detail: draft.detail,
       stage: draft.stage,
       notes: draft.notes,
+      photos: await _persistPhotos(draft.photos),
     );
     await _load();
     if (mounted) _notify('Record saved.');
+  }
+
+  Future<List<String>> _persistPhotos(List<XFile> photos) async {
+    if (photos.isEmpty) return [];
+    final root = await getApplicationDocumentsDirectory();
+    final folder = Directory(p.join(root.path, 'record_photos'));
+    await folder.create(recursive: true);
+    final saved = <String>[];
+    for (var i = 0; i < photos.length; i++) {
+      final source = photos[i];
+      final extension = p.extension(source.path).isEmpty ? '.jpg' : p.extension(source.path);
+      final destination = p.join(folder.path, '${DateTime.now().microsecondsSinceEpoch}_$i$extension');
+      await File(source.path).copy(destination);
+      saved.add(destination);
+    }
+    return saved;
   }
 
   Future<void> _showListings(StudioRecord record) async {
@@ -233,7 +254,21 @@ class _StudioHomePageState extends State<StudioHomePage> {
                                 child: Icon(current.icon, color: const Color(0xFF89533F)),
                               ),
                               title: Text(record.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                              subtitle: details.isEmpty ? null : Text(details),
+                              subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                if (details.isNotEmpty) Text(details),
+                                if (record.photos.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  SizedBox(height: 76, child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: record.photos.length,
+                                    separatorBuilder: (_, __) => const SizedBox(width: 6),
+                                    itemBuilder: (_, photoIndex) => ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.file(File(record.photos[photoIndex]), width: 76, height: 76, fit: BoxFit.cover),
+                                    ),
+                                  )),
+                                ],
+                              ]),
                               trailing: current.category == 'sale'
                                   ? Row(mainAxisSize: MainAxisSize.min, children: [
                                       IconButton(tooltip: 'Create listing', icon: const Icon(Icons.description_outlined), onPressed: () => _showListings(record)),
@@ -277,11 +312,12 @@ class _HomeLink extends StatelessWidget {
 }
 
 class _Draft {
-  const _Draft(this.title, this.detail, this.stage, this.notes);
+  const _Draft(this.title, this.detail, this.stage, this.notes, this.photos);
   final String title;
   final String detail;
   final String stage;
   final String notes;
+  final List<XFile> photos;
 }
 
 class _RecordDialog extends StatefulWidget {
@@ -297,6 +333,13 @@ class _RecordDialogState extends State<_RecordDialog> {
   final _detail = TextEditingController();
   final _notes = TextEditingController();
   String? _stage;
+  final List<XFile> _photos = [];
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickPhotos() async {
+    final selected = await _picker.pickMultiImage(imageQuality: 85, maxWidth: 1800);
+    if (selected.isNotEmpty && mounted) setState(() => _photos.addAll(selected));
+  }
 
   List<String> get _options => switch (widget.category) {
         'piece' => ['Wet', 'Leather hard', 'Bone dry', 'Bisque fired', 'Glazed', 'Finished'],
@@ -360,6 +403,24 @@ class _RecordDialogState extends State<_RecordDialog> {
                   onChanged: (value) => setState(() => _stage = value),
                 ),
                 const SizedBox(height: 12),
+                Align(alignment: Alignment.centerLeft, child: OutlinedButton.icon(
+                  onPressed: _pickPhotos,
+                  icon: const Icon(Icons.add_photo_alternate_outlined),
+                  label: Text(_photos.isEmpty ? 'Add photos' : 'Add more photos (${_photos.length})'),
+                )),
+                if (_photos.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(height: 72, child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _photos.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 6),
+                    itemBuilder: (context, index) => Stack(children: [
+                      ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(File(_photos[index].path), width: 72, height: 72, fit: BoxFit.cover)),
+                      Positioned(right: 0, top: 0, child: InkWell(onTap: () => setState(() => _photos.removeAt(index)), child: const CircleAvatar(radius: 11, child: Icon(Icons.close, size: 14)))),
+                    ]),
+                  )),
+                ],
+                const SizedBox(height: 8),
                 TextField(
                   controller: _notes,
                   minLines: widget.category == 'sale' ? 4 : 2,
@@ -375,7 +436,7 @@ class _RecordDialogState extends State<_RecordDialog> {
           FilledButton(
             onPressed: () {
               if (!_form.currentState!.validate()) return;
-              Navigator.pop(context, _Draft(_title.text.trim(), _detail.text.trim(), _stage ?? '', _notes.text.trim()));
+              Navigator.pop(context, _Draft(_title.text.trim(), _detail.text.trim(), _stage ?? '', _notes.text.trim(), List<XFile>.from(_photos)));
             },
             child: const Text('Save'),
           ),
