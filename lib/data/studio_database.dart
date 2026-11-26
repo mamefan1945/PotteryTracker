@@ -41,6 +41,7 @@ class StudioRecord {
         'detail': detail,
         'stage': stage,
         'notes': notes,
+        'photos': jsonEncode(photos),
         'created_at': createdAt,
       };
 }
@@ -66,6 +67,7 @@ class StudioDatabase {
             detail TEXT NOT NULL DEFAULT '',
             stage TEXT NOT NULL DEFAULT '',
             notes TEXT NOT NULL DEFAULT '',
+            photos TEXT NOT NULL DEFAULT '[]',
             created_at TEXT NOT NULL
           )
         ''');
