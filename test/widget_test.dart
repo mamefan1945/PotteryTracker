@@ -12,3 +12,18 @@ void main() {
     expect(find.text('Firings'), findsWidgets);
   });
 }
+
+
+  testWidgets('shows app and bundled third-party license notices', (tester) async {
+    await tester.pumpWidget(const PotteryTrackerApp());
+    await tester.tap(find.byTooltip('About and open-source licenses'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('About PotteryTracker'), findsOneWidget);
+    await tester.tap(find.text('Open-source licenses'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Licenses'), findsOneWidget);
+    expect(find.textContaining('PotteryTracker'), findsWidgets);
+    expect(find.textContaining('MIT License'), findsWidgets);
+  });
