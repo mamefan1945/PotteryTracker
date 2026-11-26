@@ -27,8 +27,28 @@ jobs:
         run: flutter pub get
       - name: Analyze
         run: flutter analyze
-      - name: Run tests
+      - name: Run unit and widget tests
         run: flutter test
+      - name: Capture iOS screenshots
+        shell: bash
+        run: |
+          mkdir -p screenshots/ios
+          DEVICE_ID="$(flutter devices --machine | python3 -c 'import json,sys; devices=json.load(sys.stdin); matches=[d for d in devices if "ios" in d.get("targetPlatform","").lower() and d.get("emulator",False)]; print(matches[0]["id"] if matches else "")')"
+          if [ -z "$DEVICE_ID" ]; then
+            echo "No available iOS simulator was found."
+            flutter devices
+            exit 1
+          fi
+          SCREENSHOT_PLATFORM=ios flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart -d "$DEVICE_ID"
+          test -n "$(find screenshots/ios -name '*.png' -print -quit)"
+          cd screenshots
+          zip -r ../potterytracker-ios-screenshots.zip ios
+      - name: Upload iOS screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: potterytracker-ios-screenshots
+          path: potterytracker-ios-screenshots.zip
+          if-no-files-found: error
       - name: Build unsigned iOS app
         run: flutter build ios --release --no-codesign
       - name: Upload iOS app bundle
