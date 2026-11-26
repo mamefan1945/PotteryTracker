@@ -27,10 +27,28 @@ jobs:
         run: flutter pub get
       - name: Analyze
         run: flutter analyze
-      - name: Run tests
+      - name: Run unit and widget tests
         run: flutter test
       - name: Build debug APK
         run: flutter build apk --debug
+      - name: Capture Android screenshots
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_7
+          script: |
+            mkdir -p screenshots/android
+            SCREENSHOT_PLATFORM=android flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart -d emulator-5554
+            test -n "$(find screenshots/android -name '*.png' -print -quit)"
+            cd screenshots
+            zip -r ../potterytracker-android-screenshots.zip android
+      - name: Upload Android screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: potterytracker-android-screenshots
+          path: potterytracker-android-screenshots.zip
+          if-no-files-found: error
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
