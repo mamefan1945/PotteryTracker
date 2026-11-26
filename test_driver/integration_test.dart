@@ -10,7 +10,7 @@ Future<void> main() async {
     onScreenshot: (name, bytes, [args]) async {
       final file = File('${output.path}/$name.png');
       await file.writeAsBytes(bytes, flush: true);
-      print('Saved screenshot: ${file.path}');
+      // Screenshot paths are emitted by the CI artifact upload step.
       return true;
     },
   );
