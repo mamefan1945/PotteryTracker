@@ -12,6 +12,27 @@ import 'data/studio_database.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  LicenseRegistry.addLicense(() async* {
+    yield const LicenseEntryWithLineBreaks(
+      ['PotteryTracker'],
+      'MIT License\\n\\nCopyright (c) 2026 PotteryTracker contributors\\n\\n'
+      'Permission is hereby granted, free of charge, to any person obtaining a copy '
+      'of this software and associated documentation files (the "Software"), to deal '
+      'in the Software without restriction, including without limitation the rights '
+      'to use, copy, modify, merge, publish, distribute, sublicense, and/or sell '
+      'copies of the Software, and to permit persons to whom the Software is '
+      'furnished to do so, subject to the following conditions:\\n\\n'
+      'The above copyright notice and this permission notice shall be included in all '
+      'copies or substantial portions of the Software.\\n\\n'
+      'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR '
+      'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, '
+      'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE '
+      'AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER '
+      'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, '
+      'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE '
+      'SOFTWARE.',
+    );
+  });
   runApp(const PotteryTrackerApp());
 }
 
@@ -162,6 +183,46 @@ class _StudioHomePageState extends State<StudioHomePage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
+  Future<void> _showAbout() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('About PotteryTracker'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Pottery studio management for Android and iOS.'),
+            SizedBox(height: 12),
+            Text('Version 0.1.0'),
+            SizedBox(height: 8),
+            Text('© 2026 PotteryTracker contributors. Licensed under the MIT License.'),
+            SizedBox(height: 8),
+            Text('This app uses open-source software. Third-party license notices are included below.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              showLicensePage(
+                context: context,
+                applicationName: 'PotteryTracker',
+                applicationVersion: '0.1.0',
+                applicationLegalese: '© 2026 PotteryTracker contributors. MIT License.',
+              );
+            },
+            child: const Text('Open-source licenses'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasRecords = current.category.isNotEmpty;
@@ -172,6 +233,13 @@ class _StudioHomePageState extends State<StudioHomePage> {
           SizedBox(width: 10),
           Text('PotteryTracker', style: TextStyle(fontWeight: FontWeight.w700)),
         ]),
+        actions: [
+          IconButton(
+            tooltip: 'About and open-source licenses',
+            icon: const Icon(Icons.info_outline),
+            onPressed: _showAbout,
+          ),
+        ],
       ),
       body: SafeArea(child: hasRecords ? _recordPage() : _homePage()),
       floatingActionButton: hasRecords
