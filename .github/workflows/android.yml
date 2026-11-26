@@ -33,6 +33,8 @@ jobs:
         run: sed -i 's/android:label="pottery_tracker"/android:label="Pottery Manager"/' android/app/src/main/AndroidManifest.xml
       - name: Install dependencies
         run: flutter pub get
+      - name: Generate platform launcher icons
+        run: dart run launcher_icons
       - name: Analyze
         run: flutter analyze
       - name: Run unit and widget tests
@@ -68,6 +70,8 @@ jobs:
         run: sed -i 's/android:label="pottery_tracker"/android:label="Pottery Manager"/' android/app/src/main/AndroidManifest.xml
       - name: Install dependencies
         run: flutter pub get
+      - name: Generate platform launcher icons
+        run: dart run launcher_icons
       - name: Capture Android screenshots
         uses: reactivecircus/android-emulator-runner@v2
         env:
