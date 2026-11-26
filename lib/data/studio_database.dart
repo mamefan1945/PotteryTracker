@@ -115,6 +115,24 @@ class StudioDatabase {
     });
   }
 
+  Future<int> update({
+    required int id,
+    required String title,
+    String detail = '',
+    String stage = '',
+    String notes = '',
+    List<String> photos = const [],
+  }) async {
+    final db = await database;
+    return db.update('studio_records', {
+      'title': title.trim(),
+      'detail': detail.trim(),
+      'stage': stage.trim(),
+      'notes': notes.trim(),
+      'photos': jsonEncode(photos),
+    }, where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<int> delete(int id) async {
     final db = await database;
     return db.delete('studio_records', where: 'id = ?', whereArgs: [id]);
