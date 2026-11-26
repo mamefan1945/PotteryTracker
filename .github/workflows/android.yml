@@ -7,12 +7,18 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# A new commit supersedes an older Android CI run, including a stuck emulator.
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -31,6 +37,29 @@ jobs:
         run: flutter test
       - name: Build debug APK
         run: flutter build apk --debug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: potterytracker-android-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+
+  screenshots-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate Android and iOS runner projects
+        run: flutter create --platforms=android,ios --project-name pottery_tracker .
+      - name: Install dependencies
+        run: flutter pub get
       - name: Capture Android screenshots
         uses: reactivecircus/android-emulator-runner@v2
         env:
@@ -40,21 +69,17 @@ jobs:
           arch: x86_64
           profile: pixel_7
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          emulator-boot-timeout: 600
           script: |
             mkdir -p screenshots/android
-            SCREENSHOT_PLATFORM=android flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart -d emulator-5554
+            timeout --signal=TERM --kill-after=30s 6m bash -lc 'SCREENSHOT_PLATFORM=android flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart -d emulator-5554'
             test -n "$(find screenshots/android -name '*.png' -print -quit)"
             cd screenshots
             zip -r ../potterytracker-android-screenshots.zip android
       - name: Upload Android screenshots
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: potterytracker-android-screenshots
           path: potterytracker-android-screenshots.zip
-          if-no-files-found: error
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: potterytracker-android-debug
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          if-no-files-found: error
+          if-no-files-found: warn
