@@ -1,4 +1,4 @@
-# PotteryTracker
+# Pottery Manager
 
 A cross-platform pottery studio companion for Android and iOS, built with Flutter.
 
