@@ -235,7 +235,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
                               title: Text(record.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                               subtitle: details.isEmpty ? null : Text(details),
                               trailing: current.category == 'sale'
-                                  ? Wrap(mainAxisSize: MainAxisSize.min, children: [
+                                  ? Row(mainAxisSize: MainAxisSize.min, children: [
                                       IconButton(tooltip: 'Create listing', icon: const Icon(Icons.description_outlined), onPressed: () => _showListings(record)),
                                       IconButton(tooltip: 'Delete record', icon: const Icon(Icons.delete_outline), onPressed: () => _delete(record)),
                                     ])
