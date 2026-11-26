@@ -1,3 +1,7 @@
+// Flutter 3.50 marks the Material umbrella library deprecated while its replacement stabilizes.
+// Keep using the stable Flutter SDK Material widgets for broad Android/iOS compatibility.
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'data/studio_database.dart';
 
