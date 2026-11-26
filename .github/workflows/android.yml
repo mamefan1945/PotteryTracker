@@ -35,14 +35,18 @@ jobs:
         run: flutter analyze
       - name: Run unit and widget tests
         run: flutter test
-      - name: Build debug APK
-        run: flutter build apk --debug
-      - name: Upload APK
+      - name: Build release APKs (per architecture and universal)
+        run: |
+          flutter build apk --release --split-per-abi
+          flutter build apk --release
+      - name: Upload release APKs
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: potterytracker-android-debug
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: potterytracker-android-release
+          path: |
+            build/app/outputs/flutter-apk/app-*-release.apk
+            build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
 
   screenshots-android:
