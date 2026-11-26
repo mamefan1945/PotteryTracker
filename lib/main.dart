@@ -81,7 +81,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
       appBar: AppBar(
         title: const Row(
           children: [
-            Icon(Icons pottery_outlined, size: 26),
+            Icon(Icons.spa_outlined, size: 26),
             SizedBox(width: 10),
             Text('PotteryTracker', style: TextStyle(fontWeight: FontWeight.w700)),
           ],
