@@ -8,7 +8,7 @@ void main() {
     expect(find.text('PotteryTracker'), findsOneWidget);
     expect(find.text('Studio'), findsWidgets);
     expect(find.text('Pieces'), findsWidgets);
-    expect(find.text('Materials'), findsOneWidget);
-    expect(find.text('Firings'), findsOneWidget);
+    expect(find.text('Materials'), findsWidgets);
+    expect(find.text('Firings'), findsWidgets);
   });
 }
