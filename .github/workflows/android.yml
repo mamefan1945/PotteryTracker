@@ -29,6 +29,8 @@ jobs:
           cache: true
       - name: Generate Android and iOS runner projects
         run: flutter create --platforms=android,ios --project-name pottery_tracker .
+      - name: Set Android app display name
+        run: sed -i 's/android:label="pottery_tracker"/android:label="Pottery Manager"/' android/app/src/main/AndroidManifest.xml
       - name: Install dependencies
         run: flutter pub get
       - name: Analyze
@@ -62,6 +64,8 @@ jobs:
           cache: true
       - name: Generate Android and iOS runner projects
         run: flutter create --platforms=android,ios --project-name pottery_tracker .
+      - name: Set Android app display name
+        run: sed -i 's/android:label="pottery_tracker"/android:label="Pottery Manager"/' android/app/src/main/AndroidManifest.xml
       - name: Install dependencies
         run: flutter pub get
       - name: Capture Android screenshots
