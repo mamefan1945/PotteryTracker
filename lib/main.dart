@@ -157,6 +157,12 @@ class _StudioHomePageState extends State<StudioHomePage> {
     if (mounted) _notify('Changes saved.');
   }
 
+  Future<void> _openPhotoGallery(List<String> photos, int initialIndex) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => _PhotoGalleryPage(photos: photos, initialIndex: initialIndex),
+    ));
+  }
+
   Future<void> _showListings(StudioRecord record) async {
     await showDialog<void>(context: context, builder: (context) => _ListingDialog(record: record));
   }
@@ -352,9 +358,12 @@ class _StudioHomePageState extends State<StudioHomePage> {
                                     scrollDirection: Axis.horizontal,
                                     itemCount: record.photos.length,
                                     separatorBuilder: (_, __) => const SizedBox(width: 6),
-                                    itemBuilder: (_, photoIndex) => ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.file(File(record.photos[photoIndex]), width: 76, height: 76, fit: BoxFit.cover),
+                                    itemBuilder: (context, photoIndex) => GestureDetector(
+                                      onTap: () => _openPhotoGallery(record.photos, photoIndex),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.file(File(record.photos[photoIndex]), width: 76, height: 76, fit: BoxFit.cover),
+                                      ),
                                     ),
                                   )),
                                 ],
@@ -519,7 +528,12 @@ class _RecordDialogState extends State<_RecordDialog> {
                     itemCount: _photos.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 6),
                     itemBuilder: (context, index) => Stack(children: [
-                      ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(File(_photos[index]), width: 72, height: 72, fit: BoxFit.cover)),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) => _PhotoGalleryPage(photos: _photos, initialIndex: index),
+                        )),
+                        child: ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(File(_photos[index]), width: 72, height: 72, fit: BoxFit.cover)),
+                      ),
                       Positioned(right: 0, top: 0, child: InkWell(onTap: () => setState(() => _photos.removeAt(index)), child: const CircleAvatar(radius: 11, child: Icon(Icons.close, size: 14)))),
                     ]),
                   )),
@@ -581,4 +595,56 @@ class _ListingDialogState extends State<_ListingDialog> {
       FilledButton.icon(onPressed: () { Clipboard.setData(ClipboardData(text: _listing)); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing copied to clipboard.'))); }, icon: const Icon(Icons.copy), label: const Text('Copy listing')),
     ],
   );
+}
+
+class _PhotoGalleryPage extends StatefulWidget {
+  const _PhotoGalleryPage({required this.photos, required this.initialIndex});
+
+  final List<String> photos;
+  final int initialIndex;
+
+  @override
+  State<_PhotoGalleryPage> createState() => _PhotoGalleryPageState();
+}
+
+class _PhotoGalleryPageState extends State<_PhotoGalleryPage> {
+  late final PageController _controller = PageController(initialPage: widget.initialIndex);
+  late int _currentIndex = widget.initialIndex;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          title: Text('${_currentIndex + 1} of ${widget.photos.length}'),
+          centerTitle: true,
+        ),
+        body: PageView.builder(
+          controller: _controller,
+          itemCount: widget.photos.length,
+          onPageChanged: (index) => setState(() => _currentIndex = index),
+          itemBuilder: (context, index) => Center(
+            child: InteractiveViewer(
+              minScale: 0.8,
+              maxScale: 5,
+              child: Image.file(
+                File(widget.photos[index]),
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.broken_image_outlined,
+                  color: Colors.white70,
+                  size: 64,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
