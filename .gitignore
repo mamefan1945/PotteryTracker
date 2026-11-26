@@ -1,0 +1,28 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+*.lock
+# Keep pubspec.lock for applications; it is intentionally NOT ignored.
+# IDEs
+.idea/
+.vscode/
+*.iml
+# OS
+.DS_Store
+Thumbs.db
+# Android
+/android/.gradle/
+/android/local.properties
+/android/**/GeneratedPluginRegistrant.java
+# iOS
+/ios/Flutter/.last_build_id
+/ios/Flutter/Generated.xcconfig
+/ios/ServiceDefinitions.json
+/ios/Runner/GeneratedPluginRegistrant.*
+/ios/Pods/
+/ios/.symlinks/
