@@ -14,8 +14,8 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   LicenseRegistry.addLicense(() async* {
     yield const LicenseEntryWithLineBreaks(
-      ['PotteryTracker'],
-      'MIT License\\n\\nCopyright (c) 2026 PotteryTracker contributors\\n\\n'
+      ['Pottery Manager'],
+      'MIT License\\n\\nCopyright (c) 2026 Pottery Manager contributors\\n\\n'
       'Permission is hereby granted, free of charge, to any person obtaining a copy '
       'of this software and associated documentation files (the "Software"), to deal '
       'in the Software without restriction, including without limitation the rights '
@@ -33,15 +33,15 @@ void main() {
       'SOFTWARE.',
     );
   });
-  runApp(const PotteryTrackerApp());
+  runApp(const Pottery ManagerApp());
 }
 
-class PotteryTrackerApp extends StatelessWidget {
-  const PotteryTrackerApp({super.key});
+class Pottery ManagerApp extends StatelessWidget {
+  const Pottery ManagerApp({super.key});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'PotteryTracker',
+        title: 'Pottery Manager',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
@@ -193,7 +193,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('About PotteryTracker'),
+        title: const Text('About Pottery Manager'),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,7 +202,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
             SizedBox(height: 12),
             Text('Version 0.1.0'),
             SizedBox(height: 8),
-            Text('© 2026 PotteryTracker contributors. Licensed under the MIT License.'),
+            Text('© 2026 Pottery Manager contributors. Licensed under the MIT License.'),
             SizedBox(height: 8),
             Text('This app uses open-source software. Third-party license notices are included below.'),
           ],
@@ -213,9 +213,9 @@ class _StudioHomePageState extends State<StudioHomePage> {
               Navigator.of(dialogContext).pop();
               showLicensePage(
                 context: context,
-                applicationName: 'PotteryTracker',
+                applicationName: 'Pottery Manager',
                 applicationVersion: '0.1.0',
-                applicationLegalese: '© 2026 PotteryTracker contributors. MIT License.',
+                applicationLegalese: '© 2026 Pottery Manager contributors. MIT License.',
               );
             },
             child: const Text('Open-source licenses'),
@@ -237,7 +237,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
         title: const Row(children: [
           Icon(Icons.spa_outlined),
           SizedBox(width: 10),
-          Text('PotteryTracker', style: TextStyle(fontWeight: FontWeight.w700)),
+          Text('Pottery Manager', style: TextStyle(fontWeight: FontWeight.w700)),
         ]),
         actions: [
           IconButton(
