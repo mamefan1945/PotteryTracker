@@ -33,10 +33,13 @@ jobs:
         run: flutter build apk --debug
       - name: Capture Android screenshots
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          ANDROID_I_WANT_MY_TCG: "yes"
         with:
           api-level: 35
           arch: x86_64
           profile: pixel_7
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           script: |
             mkdir -p screenshots/android
             SCREENSHOT_PLATFORM=android flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart -d emulator-5554
