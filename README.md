@@ -13,12 +13,12 @@ A cross-platform pottery studio companion for Android and iOS, built with Flutte
 ## Technology
 
 - Flutter and Dart for a shared Android/iOS application.
-- Offline-first data storage (database implementation is part of the next development phase).
+- Offline-first SQLite storage for studio records and photos.
 - GitHub Actions for automated Android and iOS build checks.
 
 ## Current status
 
-**Early functional prototype.** The app now has an offline SQLite store and working add/list/delete flows for pottery pieces, materials, and kiln firing records. Records persist on the device. Structured firing measurements, richer material inventory, photos, editing, search, and backup/export are planned next.
+**Early functional prototype.** The app has an offline SQLite store with add, edit, list, and delete flows for pottery pieces, materials, kiln firing records, and finished items for sale. Records and photos persist on the device. Marketplace listing drafts can be prepared and copied for manual review and publishing. Structured firing measurements, richer material inventory, search, and backup/export remain planned.
 
 ## Build locally
 
@@ -34,8 +34,8 @@ The `flutter create` command generates the native Android and iOS runner project
 
 ## CI builds
 
-GitHub Actions runs on pushes and pull requests to `main`. Android produces a debug APK artifact. The iOS workflow compiles an unsigned iOS build on a macOS runner; distribution through TestFlight requires Apple signing credentials and an Apple Developer account.
+GitHub Actions runs on pushes and pull requests to `main`. Android produces release APK artifacts and the iOS workflow compiles an unsigned iOS app on a macOS runner. The iOS app must be signed before it can be installed on a physical iPhone; TestFlight distribution requires Apple signing credentials and an Apple Developer account.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). The app includes an **About → Open-source licenses** screen that displays the app's MIT notice and the license notices registered by Flutter and its dependencies. Flutter's license registry supplies the third-party notices at runtime, including transitive packages.
