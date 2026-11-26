@@ -23,6 +23,11 @@ jobs:
           cache: true
       - name: Generate Android and iOS runner projects
         run: flutter create --platforms=android,ios --project-name pottery_tracker .
+      - name: Set native app display name
+        shell: bash
+        run: |
+          sed -i 's/android:label="pottery_tracker"/android:label="Pottery Manager"/' android/app/src/main/AndroidManifest.xml
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Pottery Manager'" ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Pottery Manager'" ios/Runner/Info.plist
       - name: Install dependencies
         run: flutter pub get
       - name: Analyze
