@@ -331,7 +331,7 @@ class _RecordDialogState extends State<_RecordDialog> {
             ? 'piece'
             : widget.category == 'material'
                 ? 'material'
-                : 'firing')),
+                : widget.category == 'sale' ? 'finished item' : 'firing')),
         content: Form(
           key: _form,
           child: SingleChildScrollView(
