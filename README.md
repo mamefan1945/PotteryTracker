@@ -18,7 +18,7 @@ A cross-platform pottery studio companion for Android and iOS, built with Flutte
 
 ## Current status
 
-**Early scaffold.** The initial app shell and CI workflows are being established. Persistence, photo handling, and the pottery-management modules are not implemented yet.
+**Early functional prototype.** The app now has an offline SQLite store and working add/list/delete flows for pottery pieces, materials, and kiln firing records. Records persist on the device. Structured firing measurements, richer material inventory, photos, editing, search, and backup/export are planned next.
 
 ## Build locally
 
