@@ -3,6 +3,7 @@
 // ignore_for_file: deprecated_member_use, prefer_interpolation_to_compose_strings
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'data/studio_database.dart';
 
 void main() {
@@ -42,6 +43,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
     _Tab('Pieces', Icons.spa_outlined, 'piece'),
     _Tab('Materials', Icons.palette_outlined, 'material'),
     _Tab('Firings', Icons.local_fire_department_outlined, 'firing'),
+    _Tab('For Sale', Icons.storefront_outlined, 'sale'),
     _Tab('Notes', Icons.menu_book_outlined, ''),
   ];
 
@@ -91,6 +93,10 @@ class _StudioHomePageState extends State<StudioHomePage> {
     if (mounted) _notify('Record saved.');
   }
 
+  Future<void> _showListings(StudioRecord record) async {
+    await showDialog<void>(context: context, builder: (context) => _ListingDialog(record: record));
+  }
+
   Future<void> _delete(StudioRecord record) async {
     final yes = await showDialog<bool>(
       context: context,
@@ -129,7 +135,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
           ? FloatingActionButton.extended(
               onPressed: _add,
               icon: const Icon(Icons.add),
-              label: Text('Add ' + current.title.toLowerCase().substring(0, current.title.length - 1)),
+              label: Text(current.category == 'sale' ? 'Add finished item' : 'Add ' + current.title.toLowerCase().substring(0, current.title.length - 1)),
             )
           : null,
       bottomNavigationBar: NavigationBar(
@@ -165,7 +171,8 @@ class _StudioHomePageState extends State<StudioHomePage> {
           _HomeLink(icon: Icons.spa_outlined, title: 'Pieces', subtitle: 'Track pottery from wet clay to finished work', onTap: () => _changeTab(1)),
           _HomeLink(icon: Icons.palette_outlined, title: 'Materials', subtitle: 'Catalog clay bodies, glazes and ingredients', onTap: () => _changeTab(2)),
           _HomeLink(icon: Icons.local_fire_department_outlined, title: 'Firings', subtitle: 'Record kiln loads, cones and firing results', onTap: () => _changeTab(3)),
-          if (_tab == 4)
+          _HomeLink(icon: Icons.storefront_outlined, title: 'For Sale', subtitle: 'Prepare listings for finished pottery', onTap: () => _changeTab(4)),
+          if (_tab == 5)
             const Padding(
               padding: EdgeInsets.only(top: 16),
               child: Text('The studio journal will be added in a later update.'),
@@ -186,7 +193,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
                     ? 'Track your pottery projects'
                     : current.title == 'Materials'
                         ? 'Your clay and glaze library'
-                        : 'Kiln and firing history'),
+                        : current.category == 'sale' ? 'Finished pieces and marketplace listing drafts' : 'Kiln and firing history'),
               ],
             ),
           ),
@@ -227,11 +234,12 @@ class _StudioHomePageState extends State<StudioHomePage> {
                               ),
                               title: Text(record.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                               subtitle: details.isEmpty ? null : Text(details),
-                              trailing: IconButton(
-                                tooltip: 'Delete record',
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: () => _delete(record),
-                              ),
+                              trailing: current.category == 'sale'
+                                  ? Wrap(mainAxisSize: MainAxisSize.min, children: [
+                                      IconButton(tooltip: 'Create listing', icon: const Icon(Icons.description_outlined), onPressed: () => _showListings(record)),
+                                      IconButton(tooltip: 'Delete record', icon: const Icon(Icons.delete_outline), onPressed: () => _delete(record)),
+                                    ])
+                                  : IconButton(tooltip: 'Delete record', icon: const Icon(Icons.delete_outline), onPressed: () => _delete(record)),
                             ),
                           );
                         },
@@ -293,6 +301,7 @@ class _RecordDialogState extends State<_RecordDialog> {
   List<String> get _options => switch (widget.category) {
         'piece' => ['Wet', 'Leather hard', 'Bone dry', 'Bisque fired', 'Glazed', 'Finished'],
         'material' => ['Clay body', 'Glaze', 'Ingredient', 'Other'],
+        'sale' => ['Draft', 'Ready to list', 'Listed', 'Sold'],
         _ => ['Bisque', 'Glaze firing', 'Other'],
       };
 
@@ -300,13 +309,13 @@ class _RecordDialogState extends State<_RecordDialog> {
       ? 'Piece name'
       : widget.category == 'material'
           ? 'Material name'
-          : 'Firing name / load';
+          : widget.category == 'sale' ? 'Item name' : 'Firing name / load';
 
   String get _detailLabel => widget.category == 'piece'
       ? 'Clay body (optional)'
       : widget.category == 'material'
           ? 'Type or quantity (optional)'
-          : 'Kiln (optional)';
+          : widget.category == 'sale' ? 'Asking price (e.g. 48.00 USD)' : 'Kiln (optional)';
 
   @override
   void dispose() {
@@ -345,7 +354,7 @@ class _RecordDialogState extends State<_RecordDialog> {
                         ? 'Current stage'
                         : widget.category == 'material'
                             ? 'Material category'
-                            : 'Firing type',
+                            : widget.category == 'sale' ? 'Sale status' : 'Firing type',
                   ),
                   items: _options.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
                   onChanged: (value) => setState(() => _stage = value),
@@ -353,9 +362,9 @@ class _RecordDialogState extends State<_RecordDialog> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: _notes,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Notes (optional)'),
+                  minLines: widget.category == 'sale' ? 4 : 2,
+                  maxLines: widget.category == 'sale' ? 7 : 4,
+                  decoration: InputDecoration(labelText: widget.category == 'sale' ? 'Description, dimensions, materials, care and shipping details' : 'Notes (optional)'),
                 ),
               ],
             ),
@@ -372,4 +381,39 @@ class _RecordDialogState extends State<_RecordDialog> {
           ),
         ],
       );
+}
+
+class _ListingDialog extends StatefulWidget {
+  const _ListingDialog({required this.record});
+  final StudioRecord record;
+  @override
+  State<_ListingDialog> createState() => _ListingDialogState();
+}
+class _ListingDialogState extends State<_ListingDialog> {
+  String _platform = 'Etsy';
+  String get _description => widget.record.notes.trim().isEmpty ? 'Handmade ceramic pottery. Add dimensions, materials, finish and care details before publishing.' : widget.record.notes.trim();
+  String get _listing {
+    final item = widget.record.title;
+    final price = widget.record.detail.trim();
+    final description = _description;
+    if (_platform == 'eBay') return '$item | Handmade Ceramic Pottery\n\n$description\n\nCondition: New, handmade\nPrice: $price\n\nReview measurements, shipping and return terms before publishing.';
+    if (_platform == 'Facebook Marketplace') return '$item\nPrice: $price\n\n$description\n\nHandmade pottery. Message me with questions or to arrange pickup/shipping.';
+    if (_platform == 'Instagram') return '$item\n\n$description\n\nPrice: $price\n\n#handmadepottery #ceramics #pottery #ceramicart #handmade';
+    return '$item — Handmade Ceramic Pottery\n\n$description\n\nPrice: $price\n\nAdd dimensions, clay and glaze details, care instructions, processing time, shipping information and relevant search tags.';
+  }
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Prepare a marketplace listing'),
+    content: SizedBox(width: 480, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const Text('Choose a destination. This creates a draft for you to review and publish.'),
+      const SizedBox(height: 12),
+      DropdownButtonFormField<String>(value: _platform, decoration: const InputDecoration(labelText: 'Marketplace'), items: ['Etsy', 'eBay', 'Facebook Marketplace', 'Instagram'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: (v) => setState(() => _platform = v ?? 'Etsy')),
+      const SizedBox(height: 12),
+      Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)), child: SelectableText(_listing)),
+    ]))),
+    actions: [
+      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+      FilledButton.icon(onPressed: () { Clipboard.setData(ClipboardData(text: _listing)); ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing copied to clipboard.'))); }, icon: const Icon(Icons.copy), label: const Text('Copy listing')),
+    ],
+  );
 }
