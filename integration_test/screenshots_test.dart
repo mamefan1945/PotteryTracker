@@ -17,7 +17,7 @@ void main() {
     // Create a finished piece first. Sale records must link to a finished piece.
     await tester.tap(find.text('Pieces').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add pieces'));
+    await tester.tap(find.text('Add piece'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, 'Hand-thrown stoneware vase');
     await tester.tap(find.byType(DropdownButtonFormField<String>));
