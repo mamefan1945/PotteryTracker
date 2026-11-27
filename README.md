@@ -35,7 +35,7 @@ The `flutter create` command generates the native Android and iOS runner project
 
 ## CI builds
 
-GitHub Actions runs on pushes and pull requests to `main`. Android produces release APK artifacts and the iOS workflow compiles an unsigned iOS app on a macOS runner. The iOS app must be signed before it can be installed on a physical iPhone; TestFlight distribution requires Apple signing credentials and an Apple Developer account.
+GitHub Actions runs on pushes and pull requests to `main`. Android produces release APK artifacts. The iOS workflow builds an unsigned, arm64 device-targeted IPA for SideStore and uploads it as the `pottery-manager-ios-sidestore-ipa` artifact (30-day retention). Each tester signs the IPA on their own device with their own free Apple Account; free signatures require refresh every seven days and SideStore's free-account app limits apply. See [SideStore iPhone testing](docs/IOS_SIDESTORE_TESTING.md) for setup, installation, and update instructions. TestFlight distribution still requires Apple signing credentials and an Apple Developer Program membership.
 
 ## License
 
