@@ -612,13 +612,12 @@ class _RecordDialogState extends State<_RecordDialog> {
                   )
                 else
                   Container(
-                    constraints: const BoxConstraints(maxHeight: 190),
                     decoration: BoxDecoration(
                       border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: ListView(
-                      shrinkWrap: true,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         for (final related in _linkOptions)
                           CheckboxListTile(
