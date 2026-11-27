@@ -108,7 +108,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
       builder: (_) => _RecordDialog(category: current.category),
     );
     if (draft == null) return;
-    await StudioDatabase.instance.add(
+    final newId = await StudioDatabase.instance.add(
       category: current.category,
       title: draft.title,
       detail: draft.detail,
@@ -116,6 +116,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
       notes: draft.notes,
       photos: await _persistPhotos(draft.photos),
     );
+    await StudioDatabase.instance.setLinks(newId, draft.linkIds);
     await _load();
     if (mounted) _notify('Record saved.');
   }
@@ -154,6 +155,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
       notes: draft.notes,
       photos: await _persistPhotos(draft.photos),
     );
+    await StudioDatabase.instance.setLinks(record.id, draft.linkIds);
     await _load();
     if (mounted) _notify('Changes saved.');
   }
@@ -412,13 +414,19 @@ class _HomeLink extends StatelessWidget {
       );
 }
 
+String _categoryLabel(String category) => switch (category) {
+  'piece' => 'Piece', 'material' => 'Material', 'firing' => 'Firing',
+  'sale' => 'For Sale', 'journal' => 'Journal', _ => category,
+};
+
 class _Draft {
-  const _Draft(this.title, this.detail, this.stage, this.notes, this.photos);
+  const _Draft(this.title, this.detail, this.stage, this.notes, this.photos, this.linkIds);
   final String title;
   final String detail;
   final String stage;
   final String notes;
   final List<String> photos;
+  final List<int> linkIds;
 }
 
 class _RecordDialog extends StatefulWidget {
@@ -436,18 +444,38 @@ class _RecordDialogState extends State<_RecordDialog> {
   final _notes = TextEditingController();
   String? _stage;
   final List<String> _photos = [];
+  final Set<int> _selectedLinkIds = {};
+  List<StudioRecord> _linkOptions = [];
+  bool _linksLoading = true;
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     final existing = widget.record;
+    _loadLinkOptions();
     if (existing != null) {
       _title.text = existing.title;
       _detail.text = existing.detail;
       _notes.text = existing.notes;
       _stage = existing.stage.isEmpty ? null : existing.stage;
       _photos.addAll(existing.photos);
+    }
+  }
+
+  Future<void> _loadLinkOptions() async {
+    try {
+      final all = await StudioDatabase.instance.allRecords();
+      final linked = widget.record == null
+          ? <StudioRecord>[]
+          : await StudioDatabase.instance.linkedRecords(widget.record!.id);
+      if (!mounted) return;
+      _linkOptions = all.where((item) => item.category != widget.category).toList();
+      _selectedLinkIds.addAll(linked.map((item) => item.id));
+    } catch (_) {
+      // Relationship editing remains optional if the database cannot load.
+    } finally {
+      if (mounted) setState(() => _linksLoading = false);
     }
   }
 
@@ -519,6 +547,48 @@ class _RecordDialogState extends State<_RecordDialog> {
                   onChanged: (value) => setState(() => _stage = value),
                 ),
                 const SizedBox(height: 12),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Related records', style: Theme.of(context).textTheme.titleSmall),
+                ),
+                const SizedBox(height: 4),
+                if (_linksLoading)
+                  const LinearProgressIndicator()
+                else if (_linkOptions.isEmpty)
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Create records in other tabs to link them here.'),
+                  )
+                else
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 190),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final related in _linkOptions)
+                          CheckboxListTile(
+                            dense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                            value: _selectedLinkIds.contains(related.id),
+                            title: Text(related.title),
+                            subtitle: Text(_categoryLabel(related.category)),
+                            onChanged: (checked) => setState(() {
+                              if (checked == true) {
+                                _selectedLinkIds.add(related.id);
+                              } else {
+                                _selectedLinkIds.remove(related.id);
+                              }
+                            }),
+                          ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 12),
                 Align(alignment: Alignment.centerLeft, child: OutlinedButton.icon(
                   onPressed: _pickPhotos,
                   icon: const Icon(Icons.add_photo_alternate_outlined),
@@ -557,7 +627,7 @@ class _RecordDialogState extends State<_RecordDialog> {
           FilledButton(
             onPressed: () {
               if (!_form.currentState!.validate()) return;
-              Navigator.pop(context, _Draft(_title.text.trim(), _detail.text.trim(), _stage ?? '', _notes.text.trim(), List<String>.from(_photos)));
+              Navigator.pop(context, _Draft(_title.text.trim(), _detail.text.trim(), _stage ?? '', _notes.text.trim(), List<String>.from(_photos), _selectedLinkIds.toList()));
             },
             child: Text(widget.record == null ? 'Save' : 'Save changes'),
           ),
