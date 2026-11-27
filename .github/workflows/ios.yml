@@ -41,14 +41,58 @@ jobs:
         run: flutter analyze
       - name: Run unit and widget tests
         run: flutter test
-      - name: Build unsigned iOS app
+      - name: Set stable iOS bundle identifier
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          project = Path("ios/Runner.xcodeproj/project.pbxproj")
+          source = project.read_text()
+          source, count = re.subn(r"PRODUCT_BUNDLE_IDENTIFIER = [^;]+;", "PRODUCT_BUNDLE_IDENTIFIER = com.mamefan1945.potterymanager;", source)
+          if count < 1:
+              raise SystemExit("Could not set the iOS bundle identifier")
+          project.write_text(source)
+          print(f"Set stable bundle identifier in {count} build configurations")
+          PY
+      - name: Build unsigned device iOS app
         run: flutter build ios --release --no-codesign --build-number "${{ github.run_number }}"
+      - name: Package and validate device IPA for SideStore
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="build/ios/iphoneos/Runner.app"
+          EXECUTABLE="$APP/Runner"
+          test -d "$APP"
+          test -f "$EXECUTABLE"
+          ARCHS="$(lipo -archs "$EXECUTABLE")"
+          echo "Built executable architectures: $ARCHS"
+          case " $ARCHS " in
+            *" arm64 "*) ;;
+            *) echo "Device arm64 architecture is missing"; exit 1 ;;
+          esac
+          if [[ "$ARCHS" == *"x86_64"* || "$ARCHS" == *"i386"* ]]; then
+            echo "Simulator architecture unexpectedly present in device IPA"
+            exit 1
+          fi
+          mkdir -p build/ios/ipa/Payload
+          cp -R "$APP" build/ios/ipa/Payload/Runner.app
+          cd build/ios/ipa
+          /usr/bin/ditto -c -k --sequesterRsrc --keepParent Payload pottery-manager-sidestore.ipa
+          unzip -l pottery-manager-sidestore.ipa | grep -F 'Payload/Runner.app/Runner'
+          test -s pottery-manager-sidestore.ipa
       - name: Upload iOS app bundle
         uses: actions/upload-artifact@v4
         with:
           name: potterytracker-ios-unsigned
           path: build/ios/iphoneos/Runner.app
           if-no-files-found: error
+      - name: Upload device IPA for SideStore
+        uses: actions/upload-artifact@v4
+        with:
+          name: pottery-manager-ios-sidestore-ipa
+          path: build/ios/ipa/pottery-manager-sidestore.ipa
+          if-no-files-found: error
+          retention-days: 30
       - name: Capture iOS screenshots
         timeout-minutes: 20
         shell: bash
