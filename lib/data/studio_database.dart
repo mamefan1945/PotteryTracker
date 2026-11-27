@@ -58,6 +58,7 @@ class StudioDatabase {
     _database = await openDatabase(
       p.join(root, 'pottery_tracker.db'),
       version: 3,
+      onConfigure: (db) async => db.execute('PRAGMA foreign_keys = ON'),
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE studio_records (
