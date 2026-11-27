@@ -8,6 +8,7 @@ A cross-platform pottery studio companion for Android and iOS, built with Flutte
 - Organize clay bodies, glazes, glaze recipes, ingredients, and test tiles.
 - Record kiln loads, firing schedules, cone targets, and firing results.
 - Keep a dated studio journal for observations, experiments, glaze tests, ideas, and photo records.
+- Link records across Pieces, Materials, Firings, For Sale, and Journal so related studio history is visible from either side.
 - Work offline, with reliable export and backup.
 
 ## Technology
@@ -18,7 +19,7 @@ A cross-platform pottery studio companion for Android and iOS, built with Flutte
 
 ## Current status
 
-**Early functional prototype.** The app has an offline SQLite store with add, edit, list, and delete flows for pottery pieces, materials, kiln firing records, and finished items for sale, and dated studio journal entries. Journal entries support categories, optional project/topic details, and photos. Records and photos persist on the device. Marketplace listing drafts can be prepared and copied for manual review and publishing. Structured firing measurements, richer material inventory, search, and backup/export remain planned.
+**Early functional prototype.** The app has an offline SQLite store with add, edit, list, and delete flows for pottery pieces, materials, kiln firing records, and finished items for sale, and dated studio journal entries. Journal entries support categories, optional project/topic details, and photos. Records can be linked across tabs; links are stored once and shown from both records. For Sale records must reference a piece at the Finished stage. Records and photos persist on the device. Marketplace listing drafts can be prepared and copied for manual review and publishing. Structured firing measurements, richer material inventory, search, and backup/export remain planned.
 
 ## Build locally
 
