@@ -70,7 +70,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
     _Tab('Materials', Icons.palette_outlined, 'material'),
     _Tab('Firings', Icons.local_fire_department_outlined, 'firing'),
     _Tab('For Sale', Icons.storefront_outlined, 'sale'),
-    _Tab('Notes', Icons.menu_book_outlined, ''),
+    _Tab('Journal', Icons.menu_book_outlined, 'journal'),
   ];
 
   _Tab get current => _tabs[_tab];
@@ -253,7 +253,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
           ? FloatingActionButton.extended(
               onPressed: _add,
               icon: const Icon(Icons.add),
-              label: Text(current.category == 'sale' ? 'Add finished item' : 'Add ' + current.title.toLowerCase().substring(0, current.title.length - 1)),
+              label: Text(current.category == 'sale' ? 'Add finished item' : current.category == 'journal' ? 'Add journal entry' : 'Add ' + current.title.toLowerCase().substring(0, current.title.length - 1)),
             )
           : null,
       bottomNavigationBar: NavigationBar(
@@ -290,11 +290,6 @@ class _StudioHomePageState extends State<StudioHomePage> {
           _HomeLink(icon: Icons.palette_outlined, title: 'Materials', subtitle: 'Catalog clay bodies, glazes and ingredients', onTap: () => _changeTab(2)),
           _HomeLink(icon: Icons.local_fire_department_outlined, title: 'Firings', subtitle: 'Record kiln loads, cones and firing results', onTap: () => _changeTab(3)),
           _HomeLink(icon: Icons.storefront_outlined, title: 'For Sale', subtitle: 'Prepare listings for finished pottery', onTap: () => _changeTab(4)),
-          if (_tab == 5)
-            const Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: Text('The studio journal will be added in a later update.'),
-            ),
         ],
       );
 
@@ -307,11 +302,15 @@ class _StudioHomePageState extends State<StudioHomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(current.title, style: Theme.of(context).textTheme.headlineMedium),
-                Text(current.title == 'Pieces'
+                Text(current.category == 'piece'
                     ? 'Track your pottery projects'
-                    : current.title == 'Materials'
+                    : current.category == 'material'
                         ? 'Your clay and glaze library'
-                        : current.category == 'sale' ? 'Finished pieces and marketplace listing drafts' : 'Kiln and firing history'),
+                        : current.category == 'sale'
+                            ? 'Finished pieces and marketplace listing drafts'
+                            : current.category == 'journal'
+                                ? 'Observations, experiments, glaze tests and ideas from your studio'
+                                : 'Kiln and firing history'),
               ],
             ),
           ),
@@ -352,6 +351,8 @@ class _StudioHomePageState extends State<StudioHomePage> {
                               ),
                               title: Text(record.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                               subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                if (record.category == 'journal')
+                                  Text(MaterialLocalizations.of(context).formatMediumDate(DateTime.parse(record.createdAt).toLocal()), style: Theme.of(context).textTheme.labelSmall),
                                 if (details.isNotEmpty) Text(details),
                                 if (record.photos.isNotEmpty) ...[
                                   const SizedBox(height: 8),
@@ -459,20 +460,21 @@ class _RecordDialogState extends State<_RecordDialog> {
         'piece' => ['Wet', 'Leather hard', 'Bone dry', 'Bisque fired', 'Glazed', 'Finished'],
         'material' => ['Clay body', 'Glaze', 'Ingredient', 'Other'],
         'sale' => ['Draft', 'Ready to list', 'Listed', 'Sold'],
-        _ => ['Bisque', 'Glaze firing', 'Other'],
+        'journal' => ['Observation', 'Experiment', 'Glaze test', 'Idea', 'General note'],
+        _ => ['Bisque', 'Glaze firing', 'Other'], 
       };
 
   String get _nameLabel => widget.category == 'piece'
       ? 'Piece name'
       : widget.category == 'material'
           ? 'Material name'
-          : widget.category == 'sale' ? 'Item name' : 'Firing name / load';
+          : widget.category == 'sale' ? 'Item name' : widget.category == 'journal' ? 'Entry title' : 'Firing name / load';
 
   String get _detailLabel => widget.category == 'piece'
       ? 'Clay body (optional)'
       : widget.category == 'material'
           ? 'Type or quantity (optional)'
-          : widget.category == 'sale' ? 'Asking price (e.g. 48.00 USD)' : 'Kiln (optional)';
+          : widget.category == 'sale' ? 'Asking price (e.g. 48.00 USD)' : widget.category == 'journal' ? 'Project or topic (optional)' : 'Kiln (optional)';
 
   @override
   void dispose() {
@@ -488,7 +490,7 @@ class _RecordDialogState extends State<_RecordDialog> {
             ? 'piece'
             : widget.category == 'material'
                 ? 'material'
-                : widget.category == 'sale' ? 'finished item' : 'firing')),
+                : widget.category == 'sale' ? 'finished item' : widget.category == 'journal' ? 'journal entry' : 'firing')), 
         content: Form(
           key: _form,
           child: SingleChildScrollView(
@@ -511,7 +513,7 @@ class _RecordDialogState extends State<_RecordDialog> {
                         ? 'Current stage'
                         : widget.category == 'material'
                             ? 'Material category'
-                            : widget.category == 'sale' ? 'Sale status' : 'Firing type',
+                            : widget.category == 'sale' ? 'Sale status' : widget.category == 'journal' ? 'Entry type' : 'Firing type',
                   ),
                   items: _options.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
                   onChanged: (value) => setState(() => _stage = value),
@@ -542,9 +544,9 @@ class _RecordDialogState extends State<_RecordDialog> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: _notes,
-                  minLines: widget.category == 'sale' ? 4 : 2,
-                  maxLines: widget.category == 'sale' ? 7 : 4,
-                  decoration: InputDecoration(labelText: widget.category == 'sale' ? 'Description, dimensions, materials, care and shipping details' : 'Notes (optional)'),
+                  minLines: widget.category == 'sale' || widget.category == 'journal' ? 5 : 2,
+                  maxLines: widget.category == 'sale' || widget.category == 'journal' ? 10 : 4,
+                  decoration: InputDecoration(labelText: widget.category == 'sale' ? 'Description, dimensions, materials, care and shipping details' : widget.category == 'journal' ? 'Journal entry' : 'Notes (optional)'),
                 ),
               ],
             ),
