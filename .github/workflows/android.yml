@@ -37,7 +37,7 @@ jobs:
           content = path.read_text()
           mirror = 'maven { url = uri("https://maven-central.storage-download.googleapis.com/maven2/") }'
           if mirror not in content:
-              content = content.replace("mavenCentral()", mirror + "\\n        mavenCentral()")
+              content = content.replace("mavenCentral()", mirror + "\n        mavenCentral()")
           path.write_text(content)
           print("Configured Google-hosted Maven Central mirror ahead of Maven Central.")
           PY
@@ -128,7 +128,7 @@ jobs:
           content = path.read_text()
           mirror = 'maven { url = uri("https://maven-central.storage-download.googleapis.com/maven2/") }'
           if mirror not in content:
-              content = content.replace("mavenCentral()", mirror + "\\n        mavenCentral()")
+              content = content.replace("mavenCentral()", mirror + "\n        mavenCentral()")
           path.write_text(content)
           print("Configured Google-hosted Maven Central mirror ahead of Maven Central.")
           PY
