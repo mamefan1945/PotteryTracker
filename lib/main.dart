@@ -356,6 +356,24 @@ class _StudioHomePageState extends State<StudioHomePage> {
                                 if (record.category == 'journal')
                                   Text(MaterialLocalizations.of(context).formatMediumDate(DateTime.parse(record.createdAt).toLocal()), style: Theme.of(context).textTheme.labelSmall),
                                 if (details.isNotEmpty) Text(details),
+                                FutureBuilder<List<StudioRecord>>(
+                                  future: StudioDatabase.instance.linkedRecords(record.id),
+                                  builder: (context, snapshot) {
+                                    final linked = snapshot.data ?? const <StudioRecord>[];
+                                    if (linked.isEmpty) return const SizedBox.shrink();
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 6),
+                                      child: Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: linked.map((item) => Chip(
+                                          visualDensity: VisualDensity.compact,
+                                          label: Text('${_categoryLabel(item.category)}: ${item.title}'),
+                                        )).toList(),
+                                      ),
+                                    );
+                                  },
+                                ),
                                 if (record.photos.isNotEmpty) ...[
                                   const SizedBox(height: 8),
                                   SizedBox(height: 76, child: ListView.separated(
@@ -470,7 +488,9 @@ class _RecordDialogState extends State<_RecordDialog> {
           ? <StudioRecord>[]
           : await StudioDatabase.instance.linkedRecords(widget.record!.id);
       if (!mounted) return;
-      _linkOptions = all.where((item) => item.category != widget.category).toList();
+      _linkOptions = all.where((item) => widget.category == 'sale'
+          ? item.category == 'piece' && item.stage == 'Finished'
+          : item.category != widget.category).toList();
       _selectedLinkIds.addAll(linked.map((item) => item.id));
     } catch (_) {
       // Relationship editing remains optional if the database cannot load.
@@ -579,6 +599,10 @@ class _RecordDialogState extends State<_RecordDialog> {
                             subtitle: Text(_categoryLabel(related.category)),
                             onChanged: (checked) => setState(() {
                               if (checked == true) {
+                                if (widget.category == 'sale') {
+                                  _selectedLinkIds.clear();
+                                  _title.text = related.title;
+                                }
                                 _selectedLinkIds.add(related.id);
                               } else {
                                 _selectedLinkIds.remove(related.id);
@@ -625,7 +649,7 @@ class _RecordDialogState extends State<_RecordDialog> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           FilledButton(
-            onPressed: () {
+            onPressed: _linksLoading ? null : () {
               if (!_form.currentState!.validate()) return;
               Navigator.pop(context, _Draft(_title.text.trim(), _detail.text.trim(), _stage ?? '', _notes.text.trim(), List<String>.from(_photos), _selectedLinkIds.toList()));
             },
