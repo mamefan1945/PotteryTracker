@@ -31,6 +31,11 @@ jobs:
         run: flutter create --platforms=android,ios --project-name pottery_tracker .
       - name: Set Android app display name
         run: sed -i 's/android:label="pottery_tracker"/android:label="Pottery Manager"/' android/app/src/main/AndroidManifest.xml
+      - name: Add transparent padding to app icon
+        run: |
+          python3 -m venv .icon-venv
+          .icon-venv/bin/python -m pip install --disable-pip-version-check Pillow
+          .icon-venv/bin/python tool/pad_app_icon.py --scale 0.91
       - name: Install dependencies
         run: flutter pub get
       - name: Generate platform launcher icons
