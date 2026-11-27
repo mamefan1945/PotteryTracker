@@ -29,5 +29,8 @@ launcher_icons:
   image_path: assets/branding/app_icon.png
   android:
     generate: true
+    adaptive_icon_background: "#E64A19"
+    adaptive_icon_foreground: assets/branding/app_icon.png
+    adaptive_icon_foreground_inset: 0
   ios:
     generate: true
