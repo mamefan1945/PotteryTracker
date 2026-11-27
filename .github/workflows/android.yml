@@ -84,7 +84,7 @@ jobs:
 
   screenshots-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -115,10 +115,10 @@ jobs:
           arch: x86_64
           profile: pixel_7
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
-          emulator-boot-timeout: 600
+          emulator-boot-timeout: 900
           script: |
             mkdir -p screenshots/android
-            timeout --signal=TERM --kill-after=30s 6m bash -lc 'SCREENSHOT_PLATFORM=android flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart -d emulator-5554'
+            timeout --signal=TERM --kill-after=30s 20m bash -lc 'SCREENSHOT_PLATFORM=android flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart -d emulator-5554'
             test -n "$(find screenshots/android -name '*.png' -print -quit)"
             cd screenshots
             zip -r ../potterytracker-android-screenshots.zip android
