@@ -47,5 +47,43 @@ if build_types not in text:
     raise SystemExit("Could not find buildTypes block.")
 text = text.replace(build_types, signing + build_types, 1)
 text = text.replace(debug_line, release_line, 1)
+
+# Enable R8 code shrinking and Android resource shrinking for release APKs.
+release_block = '''    buildTypes {
+        release {
+'''
+optimized_block = '''    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+'''
+if optimized_block not in text:
+    if release_block not in text:
+        raise SystemExit("Could not find release buildTypes block; refusing unsafe optimization patch.")
+    text = text.replace(release_block, optimized_block, 1)
+
 gradle.write_text(text)
-print("Configured release build to use the persistent Pottery Manager signing key.")
+
+# Keep the Flutter entry-point annotation and Java/Kotlin metadata needed by
+# reflective/plugin integrations while allowing R8 to shrink unused code.
+rules = Path("android/app/proguard-rules.pro")
+if not rules.exists():
+    rules.write_text("""# Preserve runtime annotations and signatures used by Android/plugin integrations.
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+
+# Flutter entry points may be referenced by generated or reflective integration code.
+-keep class io.flutter.embedding.engine.FlutterJNI { *; }
+-keep class io.flutter.embedding.engine.dart.DartExecutor { *; }
+-keep class io.flutter.plugin.** { *; }
+
+# Preserve native method declarations.
+-keepclasseswithmembernames,includedescriptorclasses class * {
+    native <methods>;
+}
+""")
+
+print("Configured persistent release signing, R8 code shrinking, and Android resource shrinking.")
