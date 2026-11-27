@@ -57,7 +57,7 @@ class StudioDatabase {
     final root = await getDatabasesPath();
     _database = await openDatabase(
       p.join(root, 'pottery_tracker.db'),
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE studio_records (
@@ -74,10 +74,36 @@ class StudioDatabase {
         await db.execute(
           'CREATE INDEX idx_studio_records_category ON studio_records(category)',
         );
+        await db.execute('''
+          CREATE TABLE record_links (
+            record_id INTEGER NOT NULL,
+            related_record_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (record_id, related_record_id),
+            CHECK (record_id < related_record_id),
+            FOREIGN KEY (record_id) REFERENCES studio_records(id) ON DELETE CASCADE,
+            FOREIGN KEY (related_record_id) REFERENCES studio_records(id) ON DELETE CASCADE
+          )
+        ''');
+        await db.execute('CREATE INDEX idx_record_links_related ON record_links(related_record_id)');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute("ALTER TABLE studio_records ADD COLUMN photos TEXT NOT NULL DEFAULT '[]'");
+        }
+        if (oldVersion < 3) {
+        await db.execute('''
+          CREATE TABLE record_links (
+            record_id INTEGER NOT NULL,
+            related_record_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (record_id, related_record_id),
+            CHECK (record_id < related_record_id),
+            FOREIGN KEY (record_id) REFERENCES studio_records(id) ON DELETE CASCADE,
+            FOREIGN KEY (related_record_id) REFERENCES studio_records(id) ON DELETE CASCADE
+          )
+        ''');
+        await db.execute('CREATE INDEX idx_record_links_related ON record_links(related_record_id)');
         }
       },
     );
@@ -93,6 +119,56 @@ class StudioDatabase {
       orderBy: 'created_at DESC, id DESC',
     );
     return rows.map(StudioRecord.fromMap).toList();
+  }
+
+  /// Returns every record, optionally restricted to the supplied categories.
+  Future<List<StudioRecord>> allRecords({List<String>? categories}) async {
+    final db = await database;
+    final rows = await db.query(
+      'studio_records',
+      where: categories == null || categories.isEmpty
+          ? null
+          : 'category IN (${List.filled(categories.length, '?').join(',')})',
+      whereArgs: categories == null || categories.isEmpty ? null : categories,
+      orderBy: 'category ASC, title COLLATE NOCASE ASC',
+    );
+    return rows.map(StudioRecord.fromMap).toList();
+  }
+
+  /// Returns records connected to [recordId], regardless of link direction.
+  Future<List<StudioRecord>> linkedRecords(int recordId) async {
+    final db = await database;
+    final rows = await db.rawQuery('''
+      SELECT r.* FROM studio_records r
+      INNER JOIN record_links l
+        ON (l.record_id = ? AND l.related_record_id = r.id)
+        OR (l.related_record_id = ? AND l.record_id = r.id)
+      ORDER BY r.category ASC, r.title COLLATE NOCASE ASC
+    ''', [recordId, recordId]);
+    return rows.map(StudioRecord.fromMap).toList();
+  }
+
+  /// Replaces a record's complete set of relationships transactionally.
+  /// Links are stored once with ordered IDs and are visible from both records.
+  Future<void> setLinks(int recordId, List<int> relatedIds) async {
+    final db = await database;
+    final ids = relatedIds.where((id) => id != recordId).toSet();
+    await db.transaction((txn) async {
+      await txn.delete(
+        'record_links',
+        where: 'record_id = ? OR related_record_id = ?',
+        whereArgs: [recordId, recordId],
+      );
+      for (final relatedId in ids) {
+        final first = recordId < relatedId ? recordId : relatedId;
+        final second = recordId < relatedId ? relatedId : recordId;
+        await txn.insert('record_links', {
+          'record_id': first,
+          'related_record_id': second,
+          'created_at': DateTime.now().toIso8601String(),
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      }
+    });
   }
 
   Future<int> add({
