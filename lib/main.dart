@@ -3,6 +3,7 @@
 // ignore_for_file: deprecated_member_use, prefer_interpolation_to_compose_strings
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show LicenseRegistry, LicenseEntryWithLineBreaks;
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -33,11 +34,11 @@ void main() {
       'SOFTWARE.',
     );
   });
-  runApp(const Pottery ManagerApp());
+  runApp(const PotteryTrackerApp());
 }
 
-class Pottery ManagerApp extends StatelessWidget {
-  const Pottery ManagerApp({super.key});
+class PotteryTrackerApp extends StatelessWidget {
+  const PotteryTrackerApp({super.key});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
