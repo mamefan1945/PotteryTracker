@@ -10,6 +10,7 @@ void main() {
     expect(find.text('Pieces'), findsWidgets);
     expect(find.text('Materials'), findsWidgets);
     expect(find.text('Firings'), findsWidgets);
+    expect(find.text('Journal'), findsWidgets);
   });
   testWidgets('shows app and bundled third-party license notices', (tester) async {
     await tester.pumpWidget(const PotteryTrackerApp());
