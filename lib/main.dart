@@ -167,7 +167,13 @@ class _StudioHomePageState extends State<StudioHomePage> {
   }
 
   Future<void> _showListings(StudioRecord record) async {
-    await showDialog<void>(context: context, builder: (context) => _ListingDialog(record: record));
+    final linked = await StudioDatabase.instance.linkedRecords(record.id);
+    final piece = linked.where((item) => item.category == 'piece').firstOrNull;
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => _ListingDialog(record: record, piece: piece),
+    );
   }
 
   Future<void> _delete(StudioRecord record) async {
@@ -339,6 +345,7 @@ class _StudioHomePageState extends State<StudioHomePage> {
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final record = _records[index];
+                          final relatedRecordsFuture = StudioDatabase.instance.linkedRecords(record.id);
                           final details = [
                             if (record.detail.isNotEmpty) record.detail,
                             if (record.stage.isNotEmpty) record.stage,
@@ -351,13 +358,22 @@ class _StudioHomePageState extends State<StudioHomePage> {
                                 backgroundColor: const Color(0xFFF0E5D9),
                                 child: Icon(current.icon, color: const Color(0xFF89533F)),
                               ),
-                              title: Text(record.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              title: record.category == 'sale'
+                                  ? FutureBuilder<List<StudioRecord>>(
+                                      future: relatedRecordsFuture,
+                                      builder: (context, snapshot) {
+                                        final piece = snapshot.data?.where((item) => item.category == 'piece').toList();
+                                        return Text(piece != null && piece.isNotEmpty ? piece.first.title : record.title,
+                                            style: const TextStyle(fontWeight: FontWeight.w600));
+                                      },
+                                    )
+                                  : Text(record.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                               subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 if (record.category == 'journal')
                                   Text(MaterialLocalizations.of(context).formatMediumDate(DateTime.parse(record.createdAt).toLocal()), style: Theme.of(context).textTheme.labelSmall),
                                 if (details.isNotEmpty) Text(details),
                                 FutureBuilder<List<StudioRecord>>(
-                                  future: StudioDatabase.instance.linkedRecords(record.id),
+                                  future: relatedRecordsFuture,
                                   builder: (context, snapshot) {
                                     final linked = snapshot.data ?? const <StudioRecord>[];
                                     if (linked.isEmpty) return const SizedBox.shrink();
@@ -374,21 +390,33 @@ class _StudioHomePageState extends State<StudioHomePage> {
                                     );
                                   },
                                 ),
-                                if (record.photos.isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  SizedBox(height: 76, child: ListView.separated(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: record.photos.length,
-                                    separatorBuilder: (_, __) => const SizedBox(width: 6),
-                                    itemBuilder: (context, photoIndex) => GestureDetector(
-                                      onTap: () => _openPhotoGallery(record.photos, photoIndex),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.file(File(record.photos[photoIndex]), width: 76, height: 76, fit: BoxFit.cover),
-                                      ),
-                                    ),
-                                  )),
-                                ],
+                                FutureBuilder<List<StudioRecord>>(
+                                  future: relatedRecordsFuture,
+                                  builder: (context, snapshot) {
+                                    final piece = snapshot.data?.where((item) => item.category == 'piece').toList();
+                                    final photos = record.photos.isNotEmpty
+                                        ? record.photos
+                                        : record.category == 'sale' && piece != null && piece.isNotEmpty
+                                            ? piece.first.photos
+                                            : const <String>[];
+                                    if (photos.isEmpty) return const SizedBox.shrink();
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: SizedBox(height: 76, child: ListView.separated(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: photos.length,
+                                        separatorBuilder: (_, __) => const SizedBox(width: 6),
+                                        itemBuilder: (context, photoIndex) => GestureDetector(
+                                          onTap: () => _openPhotoGallery(photos, photoIndex),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: Image.file(File(photos[photoIndex]), width: 76, height: 76, fit: BoxFit.cover),
+                                          ),
+                                        ),
+                                      )),
+                                    );
+                                  },
+                                ),
                               ]),
                               trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                                 if (current.category == 'sale')
@@ -667,16 +695,21 @@ class _RecordDialogState extends State<_RecordDialog> {
 }
 
 class _ListingDialog extends StatefulWidget {
-  const _ListingDialog({required this.record});
+  const _ListingDialog({required this.record, this.piece});
   final StudioRecord record;
+  final StudioRecord? piece;
   @override
   State<_ListingDialog> createState() => _ListingDialogState();
 }
 class _ListingDialogState extends State<_ListingDialog> {
   String _platform = 'Etsy';
-  String get _description => widget.record.notes.trim().isEmpty ? 'Handmade ceramic pottery. Add dimensions, materials, finish and care details before publishing.' : widget.record.notes.trim();
+  String get _description => widget.record.notes.trim().isNotEmpty
+      ? widget.record.notes.trim()
+      : widget.piece?.notes.trim().isNotEmpty == true
+          ? widget.piece!.notes.trim()
+          : 'Handmade ceramic pottery. Add dimensions, materials, finish and care details before publishing.';
   String get _listing {
-    final item = widget.record.title;
+    final item = widget.piece?.title ?? widget.record.title;
     final price = widget.record.detail.trim();
     final description = _description;
     if (_platform == 'eBay') return '$item | Handmade Ceramic Pottery\n\n$description\n\nCondition: New, handmade\nPrice: $price\n\nReview measurements, shipping and return terms before publishing.';
