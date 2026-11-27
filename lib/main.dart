@@ -488,10 +488,11 @@ class _RecordDialogState extends State<_RecordDialog> {
           ? <StudioRecord>[]
           : await StudioDatabase.instance.linkedRecords(widget.record!.id);
       if (!mounted) return;
+      final linkedIds = linked.map((item) => item.id).toSet();
       _linkOptions = all.where((item) => widget.category == 'sale'
-          ? item.category == 'piece' && item.stage == 'Finished'
+          ? item.category == 'piece' && (item.stage == 'Finished' || linkedIds.contains(item.id))
           : item.category != widget.category).toList();
-      _selectedLinkIds.addAll(linked.map((item) => item.id));
+      _selectedLinkIds.addAll(linkedIds);
     } catch (_) {
       // Relationship editing remains optional if the database cannot load.
     } finally {
@@ -651,6 +652,12 @@ class _RecordDialogState extends State<_RecordDialog> {
           FilledButton(
             onPressed: _linksLoading ? null : () {
               if (!_form.currentState!.validate()) return;
+              if (widget.category == 'sale' && _selectedLinkIds.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Choose a finished piece to add it for sale.')),
+                );
+                return;
+              }
               Navigator.pop(context, _Draft(_title.text.trim(), _detail.text.trim(), _stage ?? '', _notes.text.trim(), List<String>.from(_photos), _selectedLinkIds.toList()));
             },
             child: Text(widget.record == null ? 'Save' : 'Save changes'),
