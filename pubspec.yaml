@@ -26,7 +26,7 @@ flutter:
   uses-material-design: true
 
 launcher_icons:
-  image_path: assets/branding/app_icon.svg
+  image_path: assets/branding/app_icon.png
   android:
     generate: true
   ios:
