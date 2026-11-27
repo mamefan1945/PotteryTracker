@@ -14,7 +14,17 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 2));
     await binding.takeScreenshot('01-studio');
 
+    // Create a finished piece first. Sale records must link to a finished piece.
     await tester.tap(find.text('Pieces').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add pieces'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, 'Hand-thrown stoneware vase');
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Finished').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     await binding.takeScreenshot('02-pieces');
 
@@ -32,8 +42,10 @@ void main() {
 
     await tester.tap(find.text('Add finished item'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).first, 'Hand-thrown stoneware vase');
-    await tester.enterText(find.byType(TextField).first, r'$68.00');
+    await tester.ensureVisible(find.text('Hand-thrown stoneware vase').last);
+    await tester.tap(find.text('Hand-thrown stoneware vase').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, '68.00 USD');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     await binding.takeScreenshot('06-for-sale-item');
