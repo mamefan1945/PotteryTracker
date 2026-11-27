@@ -2,10 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pottery_tracker/main.dart';
 
 void main() {
-  testWidgets('shows the PotteryTracker studio shell', (tester) async {
+  testWidgets('shows the Pottery Manager studio shell', (tester) async {
     await tester.pumpWidget(const PotteryTrackerApp());
 
-    expect(find.text('PotteryTracker'), findsOneWidget);
+    expect(find.text('Pottery Manager'), findsOneWidget);
     expect(find.text('Studio'), findsWidgets);
     expect(find.text('Pieces'), findsWidgets);
     expect(find.text('Materials'), findsWidgets);
@@ -16,12 +16,12 @@ void main() {
     await tester.tap(find.byTooltip('About and open-source licenses'));
     await tester.pumpAndSettle();
 
-    expect(find.text('About PotteryTracker'), findsOneWidget);
+    expect(find.text('About Pottery Manager'), findsOneWidget);
     await tester.tap(find.text('Open-source licenses'));
     await tester.pumpAndSettle();
 
     expect(find.text('Licenses'), findsOneWidget);
-    expect(find.textContaining('PotteryTracker'), findsWidgets);
+    expect(find.textContaining('Pottery Manager'), findsWidgets);
     expect(find.textContaining('MIT License'), findsWidgets);
   });
 }
