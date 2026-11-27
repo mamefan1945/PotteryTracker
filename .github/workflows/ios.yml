@@ -27,6 +27,11 @@ jobs:
         shell: bash
         run: |
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName 'Pottery Manager'" ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string 'Pottery Manager'" ios/Runner/Info.plist
+      - name: Add transparent padding to app icon
+        run: |
+          python3 -m venv .icon-venv
+          .icon-venv/bin/python -m pip install --disable-pip-version-check Pillow
+          .icon-venv/bin/python tool/pad_app_icon.py --scale 0.91
       - name: Install dependencies
         run: flutter pub get
       - name: Generate platform launcher icons
