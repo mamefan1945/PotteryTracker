@@ -168,7 +168,8 @@ class _StudioHomePageState extends State<StudioHomePage> {
 
   Future<void> _showListings(StudioRecord record) async {
     final linked = await StudioDatabase.instance.linkedRecords(record.id);
-    final piece = linked.where((item) => item.category == 'piece').firstOrNull;
+    final pieces = linked.where((item) => item.category == 'piece').toList();
+    final piece = pieces.isEmpty ? null : pieces.first;
     if (!mounted) return;
     await showDialog<void>(
       context: context,
